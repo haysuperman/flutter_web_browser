@@ -16,7 +16,21 @@
   [registrar addMethodCallDelegate:instance channel:channel];
 }
 
-
+- (void)clearCache{
+  if (@available(iOS 9.0, *)) {
+    NSSet* cacheDataTypes = [WKWebsiteDataStore allWebsiteDataTypes];
+    WKWebsiteDataStore* dataStore = [WKWebsiteDataStore defaultDataStore];
+    NSDate* dateFrom = [NSDate dateWithTimeIntervalSince1970:0];
+    [dataStore removeDataOfTypes:cacheDataTypes
+                   modifiedSince:dateFrom
+               completionHandler:^{
+                //  result(nil);
+               }];
+  } else {
+    // support for iOS8 tracked in https://github.com/flutter/flutter/issues/27624.
+    NSLog(@"Clearing cache is not supported for Flutter WebViews prior to iOS 9.");
+  }
+}
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
     if ([@"openWebPage" isEqualToString:call.method]) {
@@ -29,6 +43,7 @@
         }
         
         if (@available(iOS 9.0, *)) {
+            [self clearCache];
             // SafariViewController only supports http & https, calling it with anything else will cause a App crash.
             bool supported = [URL.scheme isEqualToString:@"http"] || [URL.scheme isEqualToString:@"https"];
             if (supported) {
